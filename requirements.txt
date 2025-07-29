@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pandas
+numpy
+scikit-learn
+matplotlib
+seaborn
+tensorflow  # optional, for deep models
+python-multipart  # for file upload
