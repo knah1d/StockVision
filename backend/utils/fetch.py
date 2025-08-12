@@ -14,7 +14,7 @@ rooms = [
 monsters = ["Goblin", "Skeleton", "Orc", "Giant Spider", "Ghost"]
 treasures = ["gold coins", "a diamond sword", "a healing potion", "a magical amulet"]
 
-inventory = [] # ha ha
+inventory = [] 
 health = 100
 
 
