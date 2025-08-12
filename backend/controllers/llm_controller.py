@@ -44,15 +44,22 @@ def explain_with_upload(
     file: UploadFile = File(..., description="Stock chart/graph image to analyze"),
     question: str = Form(..., description="Your question about the chart"),
     context_text: str = Form(default="This is a stock market chart/graph for beginner analysis.", description="Additional context about the image"),
-    use_local: bool = Form(default=False, description="Force use of local LLM")
+    use_local: bool = Form(default=False, description="Force use of local LLM (set to true for privacy or when Google AI is unavailable)")
 ):
-    """Upload a stock chart image and get beginner-friendly analysis"""
+    """Upload a stock chart image and get beginner-friendly analysis
+    
+    Parameters:
+    - file: Stock chart/graph image (PNG, JPG, JPEG supported)
+    - question: Your question about the chart 
+    - context_text: Additional context (default provides beginner-friendly analysis)
+    - use_local: False = Use Google AI (multimodal), True = Use local Ollama model
+    """
     try:
         # Validate file type
         if not file.content_type or not file.content_type.startswith('image/'):
             raise HTTPException(status_code=400, detail="File must be an image")
         
-        # Save the uploaded file
+        # Save the uploaded file to temp directory
         file_path = LLMService.save_uploaded_file(file)
         
         # Analyze the image with beginner-friendly explanations
@@ -69,35 +76,4 @@ def explain_with_upload(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error processing upload: {str(e)}")
-
-
-@router.post("/upload/local", response_model=ExplainResponse)
-def explain_with_upload_local(
-    file: UploadFile = File(..., description="Stock chart/graph image to analyze"),
-    question: str = Form(..., description="Your question about the chart"),
-    context_text: str = Form(default="This is a stock market chart/graph for beginner analysis.", description="Additional context about the image")
-):
-    """Upload a stock chart image and get analysis using local LLM only"""
-    try:
-        # Validate file type
-        if not file.content_type or not file.content_type.startswith('image/'):
-            raise HTTPException(status_code=400, detail="File must be an image")
-        
-        # Save the uploaded file
-        file_path = LLMService.save_uploaded_file(file)
-        
-        # Analyze using local LLM
-        explanation = LLMService.analyze_uploaded_image(
-            file_path=file_path,
-            question=question,
-            context_text=context_text,
-            use_local=True
-        )
-        
-        return ExplainResponse(explanation=explanation)
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error processing upload with local LLM: {str(e)}")
 
