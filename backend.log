@@ -1,0 +1,16 @@
+nohup: ignoring input
+INFO:     Will watch for changes in these directories: ['/home/kibria/Desktop/IIT_Folders/6th_semester/AI/StockVision']
+INFO:     Uvicorn running on http://0.0.0.0:8001 (Press CTRL+C to quit)
+INFO:     Started reloader process [143804] using StatReload
+INFO:     Started server process [143844]
+INFO:     Waiting for application startup.
+INFO:     Application startup complete.
+INFO:     127.0.0.1:41268 - "GET /docs?id=932d083b-63dc-482a-b2d7-e5f455f4f49c&vscodeBrowserReqId=1755019047562 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:41268 - "GET /openapi.json HTTP/1.1" 200 OK
+Warning: Local LLM not available: model 'gemma2:1b' not found (status code: 404)
+INFO:     127.0.0.1:41280 - "POST /api/ai/explain/ HTTP/1.1" 503 Service Unavailable
+INFO:     Shutting down
+INFO:     Waiting for application shutdown.
+INFO:     Application shutdown complete.
+INFO:     Finished server process [143844]
+INFO:     Stopping reloader process [143804]
