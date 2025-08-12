@@ -1,11 +1,6 @@
-venv/
-__pycache__/
-data/processed/
-data/raw/
-models/
+# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
 
-
-# react dependencies
+# dependencies
 /node_modules
 /.pnp
 .pnp.js
