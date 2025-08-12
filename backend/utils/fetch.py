@@ -105,7 +105,7 @@ def main():
                     slow_print(f"You escape with your loot: {', '.join(inventory)}")
                 else:
                     slow_print("You escape, but with empty hands.")
-                slow_print(f"Survived {turns} rooms explored. 🏆")
+                slow_print(f"Survived {turns} rooms explored. ")
                 break
         elif choice == "q":
             slow_print("You give up and accept your fate in the dungeon...")
