@@ -2,8 +2,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
-from controllers.analysis_controller import router as analysis_router
-from controllers.llm_controller import router as llm_router
+from backend.controllers.analysis_controller import router as analysis_router
+from backend.controllers.llm_controller import router as llm_router
+from backend.controllers.precomputed_controller import router as precomputed_router
 
 # Create FastAPI app
 app = FastAPI(
@@ -25,6 +26,7 @@ app.add_middleware(
 # Include routers
 app.include_router(analysis_router)
 app.include_router(llm_router)
+app.include_router(precomputed_router)
 
 @app.get("/", response_class=HTMLResponse)
 async def root():

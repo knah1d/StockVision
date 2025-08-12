@@ -1,15 +1,16 @@
 # Stock Analysis Controllers - Handle API endpoints
 from fastapi import APIRouter, HTTPException, Depends
 from typing import List, Optional
-from models.schemas import (
+from backend.models.schemas import (
     TickerAnalysisRequest, TickerAnalysisResponse,
     TickerComparisonRequest, TickerComparisonResponse,
     SectorAnalysisRequest, SectorAnalysisResponse,
     VolatilityAnalysisRequest, VolatilityAnalysisResponse,
     AvailableTickersResponse, ErrorResponse
 )
-from services.data_service import DataService
-from services.analysis_service import AnalysisService
+from backend.services.data_service import DataService
+from backend.services.analysis_service import AnalysisService
+from backend.services.cache_service import get_cache_stats, invalidate_cache, cache
 
 # Create router
 router = APIRouter(prefix="/api/analysis", tags=["Stock Analysis"])
@@ -163,3 +164,53 @@ async def get_api_stats(data_svc: DataService = Depends(get_data_service)):
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error getting stats: {str(e)}")
+
+# Cache Management Endpoints
+@router.get("/cache/stats")
+async def get_cache_statistics():
+    """Get cache statistics and status"""
+    try:
+        stats = get_cache_stats()
+        # Clean up expired entries
+        cleaned = cache.cleanup_expired()
+        stats['cleaned_expired'] = cleaned
+        return stats
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting cache stats: {str(e)}")
+
+@router.post("/cache/clear/{cache_key}")
+async def clear_specific_cache(cache_key: str):
+    """Clear a specific cache entry"""
+    try:
+        success = invalidate_cache(cache_key)
+        return {
+            "success": success,
+            "message": f"Cache '{cache_key}' {'cleared' if success else 'not found'}"
+        }
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing cache: {str(e)}")
+
+@router.post("/cache/clear-all")
+async def clear_all_cache():
+    """Clear all cache entries"""
+    try:
+        cache.clear_all()
+        return {"success": True, "message": "All cache entries cleared"}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error clearing all cache: {str(e)}")
+
+@router.get("/dashboard")
+async def get_dashboard_data(data_svc: DataService = Depends(get_data_service)):
+    """Get cached dashboard data with market overview"""
+    try:
+        return data_svc.get_dashboard_data()
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting dashboard data: {str(e)}")
+
+@router.get("/sectors")
+async def get_sectors_list(data_svc: DataService = Depends(get_data_service)):
+    """Get cached list of all sectors"""
+    try:
+        return {"sectors": data_svc.get_sectors()}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting sectors: {str(e)}")

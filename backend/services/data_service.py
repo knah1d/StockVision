@@ -4,6 +4,7 @@ import numpy as np
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple, Any
 import os
+from .cache_service import get_cached_data, set_cached_data, CACHE_KEYS
 
 class DataService:
     def __init__(self):
@@ -35,7 +36,16 @@ class DataService:
             raise
     
     def get_available_tickers(self, sector: Optional[str] = None, limit: Optional[int] = None) -> Dict[str, Any]:
-        """Get available tickers, optionally filtered by sector"""
+        """Get available tickers, optionally filtered by sector with caching"""
+        # Create cache key based on parameters
+        cache_key = f"{CACHE_KEYS['ALL_TICKERS']}_{sector}_{limit}"
+        
+        # Try to get from cache first
+        cached_result = get_cached_data(cache_key)
+        if cached_result is not None:
+            return cached_result
+        
+        # Generate fresh data
         if sector:
             filtered_tickers = self.df[self.df['sector'] == sector]['trading_code'].unique()
         else:
@@ -47,11 +57,16 @@ class DataService:
         
         sectors = sorted(self.df['sector'].dropna().unique())
         
-        return {
+        result = {
             'tickers': tickers_list,
             'total_count': len(filtered_tickers),
             'sectors': sectors
         }
+        
+        # Cache for 30 minutes
+        set_cached_data(cache_key, result, ttl=1800)
+        
+        return result
     
     def get_ticker_data(self, ticker_symbol: str, days: Optional[int] = None) -> Optional[Tuple[Dict, pd.DataFrame]]:
         """Get ticker data and basic statistics"""
@@ -212,3 +227,62 @@ class DataService:
         # Sort by volatility and return top N
         volatility_data.sort(key=lambda x: x['volatility'], reverse=True)
         return volatility_data[:top_n]
+    
+    def get_dashboard_data(self) -> Dict[str, Any]:
+        """Get cached dashboard data with market overview"""
+        # Try to get from cache first
+        cached_result = get_cached_data(CACHE_KEYS['DASHBOARD_DATA'])
+        if cached_result is not None:
+            return cached_result
+        
+        print("🔄 Generating fresh dashboard data...")
+        
+        # Calculate fresh dashboard data
+        total_tickers = self.df['trading_code'].nunique()
+        sectors = sorted(self.df['sector'].dropna().unique())
+        
+        # Get top performers (by volume)
+        latest_data = self.df.groupby('trading_code').tail(1)
+        top_by_volume = latest_data.nlargest(10, 'volume')[['trading_code', 'volume', 'closing_price', 'sector']]
+        
+        # Get market overview
+        total_volume = self.df['volume'].sum()
+        avg_price = self.df['closing_price'].mean()
+        date_range = f"{self.df['date'].min().strftime('%Y-%m-%d')} to {self.df['date'].max().strftime('%Y-%m-%d')}"
+        
+        dashboard_data = {
+            'total_tickers': total_tickers,
+            'total_sectors': len(sectors),
+            'sectors': sectors,
+            'total_volume': float(total_volume),
+            'avg_price': float(avg_price),
+            'date_range': date_range,
+            'top_performers': [
+                {
+                    'ticker': row['trading_code'],
+                    'volume': float(row['volume']),
+                    'price': float(row['closing_price']),
+                    'sector': row['sector'] if pd.notna(row['sector']) else 'Unknown'
+                }
+                for _, row in top_by_volume.iterrows()
+            ],
+            'generated_at': datetime.now().isoformat()
+        }
+        
+        # Cache for 1 hour (3600 seconds)
+        set_cached_data(CACHE_KEYS['DASHBOARD_DATA'], dashboard_data, ttl=3600)
+        
+        return dashboard_data
+    
+    def get_sectors(self) -> List[str]:
+        """Get cached list of all sectors"""
+        cached_result = get_cached_data(CACHE_KEYS['SECTORS'])
+        if cached_result is not None:
+            return cached_result
+        
+        sectors = sorted(self.df['sector'].dropna().unique().tolist())
+        
+        # Cache for 1 hour
+        set_cached_data(CACHE_KEYS['SECTORS'], sectors, ttl=3600)
+        
+        return sectors
