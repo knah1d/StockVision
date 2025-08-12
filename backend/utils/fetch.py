@@ -15,7 +15,7 @@ monsters = ["Goblin", "Skeleton", "Orc", "Giant Spider", "Ghost"]
 treasures = ["gold coins", "a diamond sword", "a healing potion", "a magical amulet"]
 
 inventory = [] 
-health = 100
+health = 200
 
 
 def slow_print(text, delay=0.03):
