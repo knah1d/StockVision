@@ -79,6 +79,23 @@ class LLMService:
             print(f"Warning: Could not cleanup old files: {e}")
 
     @staticmethod
+    def cleanup_file(file_path: str):
+        """Delete a specific file immediately after processing"""
+        try:
+            path = Path(file_path)
+            if path.exists() and path.is_file():
+                path.unlink()
+                print(f"🗑️ Cleaned up temp file: {path.name}")
+        except Exception as e:
+            print(f"Warning: Could not delete file {file_path}: {e}")
+
+    @staticmethod
+    def cleanup_multiple_files(file_paths: list[str]):
+        """Delete multiple files immediately after processing"""
+        for file_path in file_paths:
+            LLMService.cleanup_file(file_path)
+
+    @staticmethod
     def create_beginner_friendly_prompt(question: str, context_text: str = "", has_image: bool = False) -> str:
         """Create a beginner-friendly prompt for stock market analysis"""
         base_prompt = """🎓 You are a financial educator helping someone new to the stock market. Keep explanations BRIEF and CLEAR - users have limited patience!
@@ -207,12 +224,17 @@ Give a CONCISE, beginner-friendly explanation. Remember: Be helpful but BRIEF! �
             # Multimodal context - extract text parts and describe image parts
             text_parts = []
             image_count = 0
+            temp_files_to_cleanup = []  # Track temp files for cleanup
             
             for item in context:
                 if item.type == "text":
                     text_parts.append(item.content)
                 elif item.type == "image_path":
                     image_count += 1
+                    # Track temp files for cleanup
+                    if "temp_uploads" in item.content:
+                        temp_files_to_cleanup.append(item.content)
+                    
                     if os.path.exists(item.content):
                         text_parts.append(f"[Image {image_count}: Stock chart/financial document at {Path(item.content).name} - Local model will analyze based on text context]")
                     else:
@@ -241,8 +263,17 @@ Give a BRIEF, beginner-friendly explanation based on the available context. Keep
         
         try:
             response = local_llm.invoke(prompt_text)
+            
+            # 🗑️ Clean up temp files after local LLM processing
+            if 'temp_files_to_cleanup' in locals() and temp_files_to_cleanup:
+                cls.cleanup_multiple_files(temp_files_to_cleanup)
+            
             return response
         except Exception as e:
+            # Clean up temp files even on error
+            if 'temp_files_to_cleanup' in locals() and temp_files_to_cleanup:
+                cls.cleanup_multiple_files(temp_files_to_cleanup)
+            
             raise HTTPException(
                 status_code=500,
                 detail=f"Error with local LLM: {str(e)}"
@@ -275,6 +306,7 @@ Give a BRIEF, beginner-friendly explanation based on the available context. Keep
                 # Multimodal context (text + images)
                 content_parts = []
                 text_context = ""
+                temp_files_to_cleanup = []  # Track temp files for cleanup
                 
                 # Process each context item
                 for item in context:
@@ -284,6 +316,10 @@ Give a BRIEF, beginner-friendly explanation based on the available context. Keep
                         # Handle local image file
                         try:
                             if os.path.exists(item.content):
+                                # Track temp file for cleanup
+                                if "temp_uploads" in item.content:
+                                    temp_files_to_cleanup.append(item.content)
+                                
                                 # Convert local file to base64 for Gemini
                                 with open(item.content, "rb") as img_file:
                                     image_data = base64.b64encode(img_file.read()).decode('utf-8')
@@ -366,6 +402,10 @@ Keep it short, clear, and beginner-friendly! ⚡"""
                 # Create a message with multimodal content
                 message = HumanMessage(content=content_parts)
                 response = llm.invoke([message])
+                
+                # 🗑️ IMMEDIATELY clean up temp files after processing
+                if temp_files_to_cleanup:
+                    cls.cleanup_multiple_files(temp_files_to_cleanup)
             
             return response.content
             
@@ -373,6 +413,10 @@ Keep it short, clear, and beginner-friendly! ⚡"""
             # Re-raise HTTP exceptions as-is
             raise
         except Exception as e:
+            # Clean up any temp files before handling the error
+            if 'temp_files_to_cleanup' in locals() and temp_files_to_cleanup:
+                cls.cleanup_multiple_files(temp_files_to_cleanup)
+            
             # If Google AI fails, try local LLM as fallback
             print(f"Google AI failed: {e}, trying local LLM...")
             try:
@@ -404,9 +448,14 @@ Keep it short, clear, and beginner-friendly! ⚡"""
             # Use the main generate_explanation method
             result = cls.generate_explanation(context, beginner_question, use_local=use_local)
             
+            # 🗑️ IMMEDIATELY clean up the temp file after processing
+            cls.cleanup_file(file_path)
+            
             return result
             
         except Exception as e:
+            # Clean up file even if there's an error
+            cls.cleanup_file(file_path)
             raise HTTPException(
                 status_code=500,
                 detail=f"Error analyzing uploaded image: {str(e)}"
