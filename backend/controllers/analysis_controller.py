@@ -117,6 +117,18 @@ async def analyze_sector(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error analyzing sector: {str(e)}")
 
+@router.get("/sectors/{days}")
+async def get_sector_analysis(
+    days: int,
+    analysis_svc: AnalysisService = Depends(get_analysis_service)
+):
+    """Get sector analysis overview"""
+    try:
+        result = analysis_svc.get_sector_overview(days)
+        return result
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error getting sector analysis: {str(e)}")
+
 @router.post("/volatility", response_model=VolatilityAnalysisResponse)
 async def analyze_volatility(
     request: VolatilityAnalysisRequest,
