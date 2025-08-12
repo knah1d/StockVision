@@ -199,3 +199,100 @@ class AnalysisService:
                 'volumes': [p['avg_volume'] for p in all_performers]
             }
         }
+    
+    def get_sector_overview(self, days: int = 90) -> Dict[str, Any]:
+        """Get overview of all sectors performance"""
+        try:
+            # Get available sectors
+            sectors = self.data_service.df['sector'].dropna().unique()
+            
+            sector_performance = []
+            sector_stats = []
+            top_performers = []
+            
+            for sector in sectors:
+                # Get sector data
+                sector_data = self.data_service.df[self.data_service.df['sector'] == sector]
+                tickers = sector_data['trading_code'].unique()
+                
+                if len(tickers) == 0:
+                    continue
+                
+                # Calculate sector metrics
+                sector_returns = []
+                sector_volumes = []
+                sector_market_caps = []
+                top_stocks = []
+                
+                for ticker in tickers[:20]:  # Limit to first 20 tickers per sector
+                    ticker_data = sector_data[sector_data['trading_code'] == ticker].tail(days)
+                    
+                    if len(ticker_data) < 2:
+                        continue
+                    
+                    # Calculate return
+                    start_price = ticker_data['closing_price'].iloc[0]
+                    end_price = ticker_data['closing_price'].iloc[-1]
+                    
+                    if start_price > 0:
+                        return_pct = ((end_price - start_price) / start_price) * 100
+                        sector_returns.append(return_pct)
+                        
+                        # Add other metrics
+                        avg_volume = ticker_data['volume'].mean()
+                        sector_volumes.append(avg_volume)
+                        
+                        market_cap = end_price * avg_volume
+                        sector_market_caps.append(market_cap)
+                        
+                        top_stocks.append({
+                            'ticker': ticker,
+                            'return': return_pct
+                        })
+                
+                if len(sector_returns) == 0:
+                    continue
+                
+                # Calculate averages
+                avg_return = sum(sector_returns) / len(sector_returns)
+                avg_market_cap = sum(sector_market_caps) / len(sector_market_caps)
+                total_market_cap = sum(sector_market_caps)
+                avg_volatility = 5.0  # Simplified
+                
+                sector_performance.append({
+                    'sector': sector,
+                    'avg_return': avg_return / 100,  # Convert to decimal
+                    'stock_count': len(sector_returns)
+                })
+                
+                sector_stats.append({
+                    'sector': sector,
+                    'company_count': len(tickers),
+                    'avg_market_cap': avg_market_cap,
+                    'total_market_cap': total_market_cap,
+                    'avg_volatility': avg_volatility / 100
+                })
+                
+                # Top 3 performers in sector
+                top_stocks.sort(key=lambda x: x['return'], reverse=True)
+                top_performers.append({
+                    'sector': sector,
+                    'top_stocks': top_stocks[:3]
+                })
+            
+            # Sort by performance
+            sector_performance.sort(key=lambda x: x['avg_return'], reverse=True)
+            
+            return {
+                'sector_performance': sector_performance,
+                'sector_stats': sector_stats,
+                'top_performers': top_performers
+            }
+            
+        except Exception as e:
+            print(f"Error in get_sector_overview: {str(e)}")
+            return {
+                'sector_performance': [],
+                'sector_stats': [],
+                'top_performers': []
+            }
