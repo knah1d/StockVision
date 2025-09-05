@@ -57,7 +57,7 @@ function App() {
       <div className="error-container">
         <h2>⚠️ API Connection Error</h2>
         <p>Cannot connect to StockVision API backend.</p>
-        <p>Please make sure the backend server is running on port 8001.</p>
+        <p>Please make sure the backend server is running on port 8000.</p>
         <button onClick={checkApiHealth} className="retry-button">
           🔄 Retry Connection
         </button>

@@ -162,7 +162,7 @@ if __name__ == "__main__":
     uvicorn.run(
         "main:app", 
         host="0.0.0.0", 
-        port=8001,  # Changed port to avoid conflicts
+        port=8000,  # Changed port to avoid conflicts
         reload=True,
         log_level="info"
     )

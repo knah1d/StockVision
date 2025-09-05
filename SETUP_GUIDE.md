@@ -22,9 +22,9 @@ Your StockVision application with integrated ML prediction system is now fully o
     - 📈 Analysis, comparison, and sector views
     - 🤖 Real-time ML prediction integration
 
-2. **Backend API**: http://localhost:8001
+2. **Backend API**: http://localhost:8000
     - 🛠️ FastAPI server with ML endpoints
-    - 📚 Auto-documentation: http://localhost:8001/docs
+    - 📚 Auto-documentation: http://localhost:8000/docs
     - 🔌 CORS enabled for frontend integration
 
 ## 🎯 Key Features Integrated
@@ -60,7 +60,7 @@ POST /api/v1/predict/multiple         - Predict multiple stocks
 ### 1. Access the Application
 
 -   **Frontend**: Open http://localhost:3000 in your browser
--   **API Docs**: Visit http://localhost:8001/docs for API testing
+-   **API Docs**: Visit http://localhost:8000/docs for API testing
 
 ### 2. Navigate Features
 
@@ -113,7 +113,7 @@ npm start
 
 -   **System Check**: `source venv/bin/activate && python check_system.py`
 -   **Prediction Test**: `source venv/bin/activate && python test_predictions.py`
--   **API Health**: http://localhost:8001/api/analysis/health
+-   **API Health**: http://localhost:8000/api/analysis/health
 
 ## 📈 Sample Predictions
 
@@ -134,7 +134,7 @@ The system can predict prices for any of the 1,007 available stocks:
 ## 🛠️ Troubleshooting
 
 -   **Frontend not loading?**: Check if http://localhost:3000 is accessible
--   **API errors?**: Verify backend is running on http://localhost:8001
+-   **API errors?**: Verify backend is running on http://localhost:8000
 -   **Prediction fails?**: Some stocks may have insufficient data
 -   **Service unhealthy?**: Restart backend server
 

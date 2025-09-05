@@ -1,7 +1,7 @@
 // API Service for StockVision Backend
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8001/api/analysis';
+const API_BASE_URL = 'http://localhost:8000/api/analysis';
 
 class ApiService {
   constructor() {
