@@ -1,7 +1,7 @@
 from fastapi import APIRouter, HTTPException, Depends, UploadFile, File, Form
 from typing import List, Optional
-from backend.models.llm_schemas import ExplainRequest, ExplainResponse, FileUploadRequest
-from backend.services.llm_service import LLMService
+from models.llm_schemas import ExplainRequest, ExplainResponse, FileUploadRequest
+from services.llm_service import LLMService
 
 router = APIRouter(prefix="/api/ai/explain", tags=["AI Explain"])
 
