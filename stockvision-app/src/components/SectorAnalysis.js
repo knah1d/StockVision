@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import ApiService from '../services/apiService';
+import ExplainButton from './ExplainButton';
 
 const SectorAnalysis = () => {
   const [sectorData, setSectorData] = useState(null);
@@ -207,7 +208,16 @@ const SectorAnalysis = () => {
           <div className="chart-grid">
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">📈 Average Returns by Sector</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title">📈 Average Returns by Sector</h3>
+                  <ExplainButton 
+                    chartData={sectorPerformanceData}
+                    chartRef={barChartRef}
+                    defaultQuestion="What does this sector performance chart show? Which sectors should beginners consider?"
+                    contextInfo={`This chart shows average returns for different market sectors over ${days} days. Each bar represents a sector's performance - higher bars indicate better returns. This helps investors understand which industries are performing well.`}
+                    size="small"
+                  />
+                </div>
               </div>
               {sectorPerformanceData && (
                 <div className="chart-container">
@@ -223,7 +233,16 @@ const SectorAnalysis = () => {
 
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">💰 Market Cap Distribution</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title">💰 Market Cap Distribution</h3>
+                  <ExplainButton 
+                    chartData={marketCapData}
+                    chartRef={pieChartRef}
+                    defaultQuestion="What does this market cap distribution show? How important is market size when choosing stocks?"
+                    contextInfo={`This pie chart shows how market capitalization (total value) is distributed across different sectors. Larger slices represent sectors with higher total market value. This helps understand which sectors dominate the market.`}
+                    size="small"
+                  />
+                </div>
               </div>
               {marketCapData && (
                 <div className="chart-container">

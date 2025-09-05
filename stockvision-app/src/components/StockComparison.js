@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Line, Scatter } from 'react-chartjs-2';
 import ApiService from '../services/apiService';
+import ExplainButton from './ExplainButton';
 
 const StockComparison = () => {
   const [availableTickers, setAvailableTickers] = useState([]);
@@ -269,7 +270,16 @@ const StockComparison = () => {
 
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">📈 Normalized Performance Chart</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="card-title">📈 Normalized Performance Chart</h3>
+                <ExplainButton 
+                  chartData={performanceChartData}
+                  chartRef={lineChartRef}
+                  defaultQuestion="What does this normalized performance chart show? How should I compare multiple stocks using this chart?"
+                  contextInfo={`This chart compares ${selectedTickers.join(', ')} over ${days} days. Normalized charts start all stocks at the same point (100%) to show relative performance regardless of actual stock prices.`}
+                  size="small"
+                />
+              </div>
             </div>
             {performanceChartData && (
               <div className="chart-container">
@@ -308,7 +318,16 @@ const StockComparison = () => {
 
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">⚖️ Risk vs Return Analysis</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title">⚖️ Risk vs Return Analysis</h3>
+                  <ExplainButton 
+                    chartData={riskReturnData}
+                    chartRef={scatterChartRef}
+                    defaultQuestion="How do I read this risk vs return chart? What makes a good investment according to this analysis?"
+                    contextInfo={`This scatter plot shows risk (volatility) vs return for ${selectedTickers.join(', ')}. Generally, you want high returns (top) with low risk (left side). The top-left quadrant contains the best risk-adjusted investments.`}
+                    size="small"
+                  />
+                </div>
               </div>
               {riskReturnData && (
                 <div className="chart-container">

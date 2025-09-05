@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Line, Bar } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -12,6 +12,7 @@ import {
   Legend,
 } from 'chart.js';
 import ApiService from '../services/apiService';
+import ExplainButton from './ExplainButton';
 
 // Register Chart.js components
 ChartJS.register(
@@ -32,6 +33,10 @@ const StockAnalysis = () => {
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  
+  // Chart refs for capturing images
+  const priceChartRef = useRef(null);
+  const volumeChartRef = useRef(null);
 
   useEffect(() => {
     loadTickers();
@@ -229,22 +234,40 @@ const StockAnalysis = () => {
 
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">📈 Price Chart with Moving Averages</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="card-title">📈 Price Chart with Moving Averages</h3>
+                <ExplainButton 
+                  chartData={priceChartData}
+                  chartRef={priceChartRef}
+                  defaultQuestion="Can you explain this price chart? What do the moving averages tell us about the stock's trend?"
+                  contextInfo={`This is a price chart for ${analysisData.ticker_info.ticker} (${analysisData.ticker_info.sector} sector) showing ${days} days of data. Current price: ৳${analysisData.ticker_info.current_price.toFixed(2)}, Price change: ${analysisData.ticker_info.price_change_pct.toFixed(2)}%`}
+                  size="small"
+                />
+              </div>
             </div>
             {priceChartData && (
               <div className="chart-container">
-                <Line data={priceChartData} options={chartOptions} />
+                <Line ref={priceChartRef} data={priceChartData} options={chartOptions} />
               </div>
             )}
           </div>
 
           <div className="card">
             <div className="card-header">
-              <h3 className="card-title">📊 Trading Volume</h3>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <h3 className="card-title">📊 Trading Volume</h3>
+                <ExplainButton 
+                  chartData={volumeChartData}
+                  chartRef={volumeChartRef}
+                  defaultQuestion="What does this volume chart show? How should beginners interpret trading volume?"
+                  contextInfo={`This shows trading volume for ${analysisData.ticker_info.ticker}. Average volume: ${analysisData.ticker_info.avg_volume.toLocaleString()}. Volume can indicate interest and momentum in the stock.`}
+                  size="small"
+                />
+              </div>
             </div>
             {volumeChartData && (
               <div className="chart-container">
-                <Bar data={volumeChartData} options={chartOptions} />
+                <Bar ref={volumeChartRef} data={volumeChartData} options={chartOptions} />
               </div>
             )}
           </div>
@@ -252,7 +275,16 @@ const StockAnalysis = () => {
           <div className="analysis-grid">
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">🔧 Technical Indicators</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title">🔧 Technical Indicators</h3>
+                  <ExplainButton 
+                    chartData={null}
+                    chartRef={null}
+                    defaultQuestion="Can you explain these technical indicators? What do moving averages (MA5, MA20) mean for stock analysis?"
+                    contextInfo={`Technical indicators for ${analysisData.ticker_info.ticker}: Current vs MA5: ${analysisData.technical_indicators.current_vs_ma5}, Current vs MA20: ${analysisData.technical_indicators.current_vs_ma20}. These help identify trends and potential buy/sell signals.`}
+                    size="small"
+                  />
+                </div>
               </div>
               <div className="technical-indicators">
                 <div className="indicator-item">
@@ -278,7 +310,16 @@ const StockAnalysis = () => {
 
             <div className="card">
               <div className="card-header">
-                <h3 className="card-title">⚖️ Risk Metrics</h3>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <h3 className="card-title">⚖️ Risk Metrics</h3>
+                  <ExplainButton 
+                    chartData={null}
+                    chartRef={null}
+                    defaultQuestion="What do these risk metrics mean? How should beginners understand volatility and Sharpe ratio?"
+                    contextInfo={`Risk metrics for ${analysisData.ticker_info.ticker}: Daily volatility: ${(analysisData.risk_metrics.daily_volatility * 100).toFixed(2)}%, Sharpe ratio: ${analysisData.risk_metrics.sharpe_ratio.toFixed(4)}. Best day: ${(analysisData.risk_metrics.best_return * 100).toFixed(2)}%, Worst day: ${(analysisData.risk_metrics.worst_return * 100).toFixed(2)}%.`}
+                    size="small"
+                  />
+                </div>
               </div>
               <div className="risk-metrics">
                 <div className="metric-item">
