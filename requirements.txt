@@ -1,7 +1,25 @@
+# FastAPI Backend Requirements
 fastapi
 uvicorn
 pandas
 numpy
-matplotlib
-scikit-learn
+pydantic
 python-multipart
+
+# Environment Configuration
+python-dotenv
+
+# AI/ML LangChain Dependencies
+langchain
+langchain-core
+langchain-ollama
+langchain-google-genai
+typing-extensions
+
+# Data Visualization & Analysis
+matplotlib
+yfinance
+scikit-learn
+
+# HTTP Requests
+requests
