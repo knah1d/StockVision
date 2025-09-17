@@ -5,6 +5,7 @@ import Dashboard from './components/Dashboard';
 import StockAnalysis from './components/StockAnalysis';
 import StockComparison from './components/StockComparison';
 import SectorAnalysis from './components/SectorAnalysis';
+import StockPrediction from './components/StockPrediction';
 import ApiService from './services/apiService';
 
 function App() {
@@ -38,6 +39,8 @@ function App() {
         return <StockComparison />;
       case 'sector':
         return <SectorAnalysis />;
+      case 'prediction':
+        return <StockPrediction />;
       default:
         return <Dashboard />;
     }
@@ -97,6 +100,12 @@ function App() {
               onClick={() => setCurrentView('sector')}
             >
               🏢 Sectors
+            </button>
+            <button 
+              className={currentView === 'prediction' ? 'nav-button active' : 'nav-button'}
+              onClick={() => setCurrentView('prediction')}
+            >
+              🔮 Prediction
             </button>
           </nav>
         </div>

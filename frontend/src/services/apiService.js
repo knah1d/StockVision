@@ -36,7 +36,29 @@ class ApiService {
         ticker,
         days
       });
-      return response.data;
+      
+      // Ensure the response data has the expected structure
+      const data = response.data;
+      
+      // If chart_data is missing but price_data exists, copy it
+      if (!data.chart_data && data.price_data) {
+        data.chart_data = data.price_data;
+      }
+      
+      // Ensure ticker_info exists
+      if (!data.ticker_info) {
+        data.ticker_info = {
+          ticker: data.ticker,
+          sector: data.sector,
+          current_price: data.summary?.current_price || 0,
+          price_change_pct: data.summary?.price_change || 0,
+          volatility: data.statistics?.volatility || 0,
+          avg_volume: data.summary?.volume || 0,
+          date_range: data.summary?.date_range || ''
+        };
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error analyzing ticker:', error);
       throw error;
@@ -50,7 +72,25 @@ class ApiService {
         tickers,
         days
       });
-      return response.data;
+      
+      // Ensure the response data has the expected structure
+      const data = response.data;
+      
+      // If chart_data is missing but price_data exists, copy it
+      if (!data.chart_data && data.price_data) {
+        data.chart_data = data.price_data;
+      }
+      
+      // If both performance_metrics and comparison_summary/performance_ranking exist, reorganize
+      if (!data.comparison_summary && data.performance_metrics && data.performance_metrics.summary) {
+        data.comparison_summary = data.performance_metrics.summary;
+      }
+      
+      if (!data.performance_ranking && data.performance_metrics && data.performance_metrics.ranking) {
+        data.performance_ranking = data.performance_metrics.ranking;
+      }
+      
+      return data;
     } catch (error) {
       console.error('Error comparing tickers:', error);
       throw error;
@@ -116,6 +156,67 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error('Error fetching stats:', error);
+      throw error;
+    }
+  }
+
+  // Prediction API methods
+  async predictStock(ticker, days = 90, model = 'linear_regression') {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/v1/predict/${ticker}`, {
+        params: { days, model }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error predicting stock:', error);
+      throw error;
+    }
+  }
+
+  async getRecommendation(ticker, days = 90) {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/v1/predict/${ticker}/recommend`, {
+        params: { days }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error getting recommendation:', error);
+      throw error;
+    }
+  }
+
+  async compareModels(ticker, days = 90) {
+    try {
+      const response = await axios.get(`http://localhost:8000/api/v1/predict/${ticker}/compare`, {
+        params: { days }
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error comparing models:', error);
+      throw error;
+    }
+  }
+
+  async predictMultiple(tickers, days = 90, model = 'linear_regression') {
+    try {
+      const response = await axios.post('http://localhost:8000/api/v1/predict/multiple', {
+        tickers,
+        days,
+        model
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error predicting multiple stocks:', error);
+      throw error;
+    }
+  }
+
+  async getModelInfo() {
+    try {
+      const response = await axios.get('http://localhost:8000/api/v1/predict/models/info');
+      return response.data;
+    } catch (error) {
+      console.error('Error getting model info:', error);
       throw error;
     }
   }

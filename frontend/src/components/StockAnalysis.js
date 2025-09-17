@@ -56,6 +56,7 @@ const StockAnalysis = () => {
       setLoading(true);
       setError(null);
       const data = await ApiService.analyzeTicker(selectedTicker, days);
+      console.log("Received data from API:", data); // Debug log
       setAnalysisData(data);
     } catch (err) {
       setError('Failed to analyze stock');
@@ -66,7 +67,7 @@ const StockAnalysis = () => {
   };
 
   // Chart configurations
-  const priceChartData = analysisData ? {
+  const priceChartData = analysisData && analysisData.chart_data ? {
     labels: analysisData.chart_data.dates,
     datasets: [
       {
@@ -93,7 +94,7 @@ const StockAnalysis = () => {
     ],
   } : null;
 
-  const volumeChartData = analysisData ? {
+  const volumeChartData = analysisData && analysisData.chart_data ? {
     labels: analysisData.chart_data.dates,
     datasets: [
       {

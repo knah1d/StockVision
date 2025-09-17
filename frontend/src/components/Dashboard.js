@@ -25,7 +25,17 @@ const Dashboard = () => {
       // Load available tickers and sectors
       const tickersData = await ApiService.getTickers(null, 20);
       setTickers(tickersData.tickers);
-      setSectors(tickersData.sectors);
+      
+      // Ensure sectors is always an array
+      if (Array.isArray(tickersData.sectors)) {
+        setSectors(tickersData.sectors);
+      } else if (tickersData.sectors && typeof tickersData.sectors === 'object') {
+        // If it's an object (old format), convert to array of keys
+        setSectors(Object.keys(tickersData.sectors));
+      } else {
+        // Default to empty array
+        setSectors([]);
+      }
 
       // Load volatile stocks
       const volatileData = await ApiService.findVolatileStocks(null, 30, 5);
@@ -125,15 +135,23 @@ const Dashboard = () => {
             <h3 className="card-title">🏢 Available Sectors</h3>
           </div>
           <div className="sectors-list">
-            {sectors.slice(0, 10).map((sector, index) => (
-              <div key={sector} className="sector-item">
-                <span className="sector-number">{index + 1}.</span>
-                <span className="sector-name">{sector}</span>
-              </div>
-            ))}
-            {sectors.length > 10 && (
+            {Array.isArray(sectors) && sectors.length > 0 ? (
+              <>
+                {sectors.slice(0, 10).map((sector, index) => (
+                  <div key={sector} className="sector-item">
+                    <span className="sector-number">{index + 1}.</span>
+                    <span className="sector-name">{sector}</span>
+                  </div>
+                ))}
+                {sectors.length > 10 && (
+                  <div className="sector-item">
+                    <span className="sector-more">...and {sectors.length - 10} more</span>
+                  </div>
+                )}
+              </>
+            ) : (
               <div className="sector-item">
-                <span className="sector-more">...and {sectors.length - 10} more</span>
+                <span className="sector-name">Loading sectors...</span>
               </div>
             )}
           </div>

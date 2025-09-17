@@ -54,6 +54,7 @@ const StockComparison = () => {
       setLoading(true);
       setError(null);
       const data = await ApiService.compareTickers(selectedTickers, days);
+      console.log("Comparison data received:", data); // Debug log
       setComparisonData(data);
     } catch (err) {
       setError('Failed to compare stocks');
@@ -65,12 +66,23 @@ const StockComparison = () => {
 
   // Chart data for normalized performance
   const performanceChartData = comparisonData ? {
-    labels: comparisonData.chart_data[selectedTickers[0]]?.dates || [],
+    labels: comparisonData.price_data?.dates || [],
     datasets: selectedTickers.map((ticker, index) => {
       const colors = ['#667eea', '#f39c12', '#27ae60', '#e74c3c', '#9b59b6'];
+      
+      // Try to get normalized prices from either chart_data (old structure) or price_data (new structure)
+      let normalizedPrices = [];
+      if (comparisonData.chart_data && comparisonData.chart_data[ticker]?.normalized_prices) {
+        normalizedPrices = comparisonData.chart_data[ticker]?.normalized_prices;
+      } else if (comparisonData.price_data && comparisonData.price_data[ticker]?.normalized_prices) {
+        normalizedPrices = comparisonData.price_data[ticker]?.normalized_prices;
+      } else if (comparisonData.price_data && comparisonData.price_data.normalized_prices && comparisonData.price_data.normalized_prices[ticker]) {
+        normalizedPrices = comparisonData.price_data.normalized_prices[ticker];
+      }
+      
       return {
         label: ticker,
-        data: comparisonData.chart_data[ticker]?.normalized_prices || [],
+        data: normalizedPrices,
         borderColor: colors[index % colors.length],
         backgroundColor: 'transparent',
         tension: 0.1,
@@ -82,11 +94,11 @@ const StockComparison = () => {
   const riskReturnData = comparisonData ? {
     datasets: [{
       label: 'Risk vs Return',
-      data: comparisonData.chart_data.risk_return?.map(item => ({
+      data: (comparisonData.chart_data?.risk_return || comparisonData.price_data?.risk_return || []).map(item => ({
         x: item.risk * 100, // Convert to percentage
         y: item.return * 100, // Convert to percentage
         ticker: item.ticker,
-      })) || [],
+      })),
       backgroundColor: selectedTickers.map((_, index) => {
         const colors = ['#667eea', '#f39c12', '#27ae60', '#e74c3c', '#9b59b6'];
         return colors[index % colors.length];

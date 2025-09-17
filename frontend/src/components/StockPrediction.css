@@ -1,0 +1,283 @@
+/* StockPrediction Component Styles */
+
+.stock-prediction {
+  margin-bottom: 2rem;
+}
+
+.card {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 1.5rem;
+  overflow: hidden;
+}
+
+.card-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid #edf2f7;
+}
+
+.card-title {
+  margin: 0;
+  font-size: 1.25rem;
+  color: #2d3748;
+  margin-bottom: 1rem;
+}
+
+.prediction-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1rem;
+}
+
+.control-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.form-label {
+  font-weight: 500;
+  color: #4a5568;
+}
+
+.form-select {
+  padding: 0.5rem;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+  background-color: #f7fafc;
+  min-width: 120px;
+}
+
+.button-primary {
+  background-color: #4c51bf;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: background-color 0.2s;
+}
+
+.button-primary:hover {
+  background-color: #434190;
+}
+
+.button-primary:disabled {
+  background-color: #a0aec0;
+  cursor: not-allowed;
+}
+
+.prediction-chart-container {
+  height: 400px;
+  padding: 1rem;
+}
+
+.prediction-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 1rem;
+  background-color: #f8fafc;
+  border-top: 1px solid #e2e8f0;
+}
+
+.metric-card {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.metric-title {
+  font-size: 0.875rem;
+  color: #64748b;
+  margin-bottom: 0.5rem;
+}
+
+.metric-value {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.metric-value.positive {
+  color: #10b981;
+}
+
+.metric-value.negative {
+  color: #ef4444;
+}
+
+.model-name {
+  color: #6366f1;
+  font-family: monospace;
+  font-size: 1rem;
+}
+
+.recommendation-card {
+  border-left: 4px solid #cbd5e1;
+}
+
+.recommendation-buy {
+  border-left-color: #10b981;
+}
+
+.recommendation-sell {
+  border-left-color: #ef4444;
+}
+
+.recommendation-hold {
+  border-left-color: #f59e0b;
+}
+
+.recommendation-content {
+  padding: 1rem;
+}
+
+.recommendation-decision {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.recommendation-text {
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.recommendation-buy .recommendation-text {
+  background-color: rgba(16, 185, 129, 0.1);
+  color: #065f46;
+}
+
+.recommendation-sell .recommendation-text {
+  background-color: rgba(239, 68, 68, 0.1);
+  color: #991b1b;
+}
+
+.recommendation-hold .recommendation-text {
+  background-color: rgba(245, 158, 11, 0.1);
+  color: #92400e;
+}
+
+.recommendation-reason {
+  margin-bottom: 1.5rem;
+  line-height: 1.5;
+}
+
+.recommendation-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.rec-metric {
+  background: #f8fafc;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rec-label {
+  font-size: 0.75rem;
+  color: #64748b;
+}
+
+.rec-value {
+  font-weight: 600;
+}
+
+.recommendation-disclaimer {
+  font-size: 0.75rem;
+  color: #64748b;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 1rem;
+}
+
+.model-info-card {
+  margin-top: 2rem;
+}
+
+.model-info-content {
+  padding: 1rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+  gap: 1rem;
+}
+
+.info-item {
+  background: #f8fafc;
+  padding: 0.75rem;
+  border-radius: 4px;
+  display: flex;
+  flex-direction: column;
+}
+
+.info-label {
+  font-size: 0.75rem;
+  color: #64748b;
+  margin-bottom: 0.25rem;
+}
+
+.info-value {
+  font-weight: 600;
+}
+
+.status-healthy {
+  color: #10b981;
+}
+
+.status-error {
+  color: #ef4444;
+}
+
+.loading-spinner {
+  border: 4px solid rgba(0, 0, 0, 0.1);
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border-left-color: #4c51bf;
+  animation: spin 1s linear infinite;
+  margin: 1rem auto;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.text-danger {
+  color: #ef4444;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+@media (max-width: 768px) {
+  .prediction-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .control-group {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .recommendation-metrics {
+    flex-direction: column;
+  }
+}
