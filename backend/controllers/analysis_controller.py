@@ -154,7 +154,8 @@ async def get_api_stats(data_svc: DataService = Depends(get_data_service)):
         tickers_info = data_svc.get_available_tickers()
         return {
             "total_tickers": tickers_info['total_count'],
-            "total_sectors": len(tickers_info['sectors']),
+            "total_sectors": len(tickers_info['sectors']),  # Now sectors is a list, still works with len()
+            "sectors": tickers_info['sectors'],  # Add sectors list for frontend use
             "data_shape": data_svc.df.shape if data_svc.df is not None else None,
             "date_range": {
                 "start": data_svc.df['date'].min().strftime('%Y-%m-%d') if data_svc.df is not None else None,

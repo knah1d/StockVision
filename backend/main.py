@@ -1,4 +1,10 @@
 # FastAPI Backend for Stock Analysis
+import sys
+import os
+
+# Add the parent directory to Python path to resolve imports
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -27,10 +33,6 @@ app.include_router(analysis_router)
 app.include_router(llm_router)
 
 # Prediction endpoints
-import sys
-import os
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
 from controllers.prediction_controller import prediction_controller
 from fastapi import HTTPException, Query
 from typing import List
