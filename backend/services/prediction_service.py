@@ -33,8 +33,13 @@ class PredictionService:
         self.models = {}
         self.scaler = None
         self.feature_names = None
+        
+        # Available model types - we'll try to load all these
         self.model_names = [
-            'linear_regression'
+            'linear_regression',
+            'ridge_regression',
+            'random_forest',
+            'gradient_boosting'
         ]
         
         # Initialize data service
@@ -89,67 +94,155 @@ class PredictionService:
         Returns:
             pd.DataFrame: Data with engineered features
         """
-        df_features = data.copy()
-        
-        # Ensure proper sorting for time series features
-        if 'trading_code' in df_features.columns:
-            df_features = df_features.sort_values(['trading_code', 'date'])
+        try:
+            # Make a copy to avoid modifying the original data
+            df_features = data.copy()
             
-            # Technical indicators for each stock
-            for code in df_features['trading_code'].unique():
-                mask = df_features['trading_code'] == code
-                stock_data = df_features[mask].copy()
+            # Ensure proper sorting for time series features
+            if 'trading_code' in df_features.columns:
+                df_features = df_features.sort_values(['trading_code', 'date'])
                 
-                if len(stock_data) > 1:
+                # Technical indicators for each stock
+                for code in df_features['trading_code'].unique():
+                    mask = df_features['trading_code'] == code
+                    stock_data = df_features[mask].copy()
+                    
+                    if len(stock_data) > 1:
+                        # Price change features
+                        df_features.loc[mask, 'price_change'] = stock_data['closing_price'].pct_change()
+                        df_features.loc[mask, 'price_change_abs'] = stock_data['closing_price'].diff()
+                        
+                        # Moving averages - only calculate if enough data
+                        if len(stock_data) >= 5:
+                            df_features.loc[mask, 'ma_5'] = stock_data['closing_price'].rolling(5).mean()
+                        else:
+                            df_features.loc[mask, 'ma_5'] = stock_data['closing_price']  # Use price directly if insufficient data
+                            
+                        if len(stock_data) >= 10:
+                            df_features.loc[mask, 'ma_10'] = stock_data['closing_price'].rolling(10).mean()
+                        else:
+                            df_features.loc[mask, 'ma_10'] = stock_data['closing_price']
+                            
+                        if len(stock_data) >= 20:
+                            df_features.loc[mask, 'ma_20'] = stock_data['closing_price'].rolling(20).mean()
+                        else:
+                            df_features.loc[mask, 'ma_20'] = stock_data['closing_price']
+                        
+                        # Volatility (rolling standard deviation) - only calculate if enough data
+                        if len(stock_data) >= 5:
+                            df_features.loc[mask, 'volatility_5'] = stock_data['closing_price'].rolling(5).std()
+                        else:
+                            df_features.loc[mask, 'volatility_5'] = stock_data['closing_price'].std()  # Use overall std if insufficient data
+                            
+                        if len(stock_data) >= 10:
+                            df_features.loc[mask, 'volatility_10'] = stock_data['closing_price'].rolling(10).std()
+                        else:
+                            df_features.loc[mask, 'volatility_10'] = stock_data['closing_price'].std()
+                        
+                        # Price position relative to high/low
+                        high_low_diff = stock_data['high'] - stock_data['low']
+                        high_low_diff = high_low_diff.replace(0, np.nan)  # Avoid division by zero
+                        df_features.loc[mask, 'price_position'] = (
+                            (stock_data['closing_price'] - stock_data['low']) / high_low_diff
+                        )
+                        
+                        # Lagged features (previous day values)
+                        df_features.loc[mask, 'prev_close'] = stock_data['closing_price'].shift(1)
+                        df_features.loc[mask, 'prev_volume'] = stock_data['volume'].shift(1)
+                        df_features.loc[mask, 'prev_high'] = stock_data['high'].shift(1)
+                        df_features.loc[mask, 'prev_low'] = stock_data['low'].shift(1)
+            else:
+                # Single stock data
+                df_features = df_features.sort_values('date')
+                
+                if len(df_features) > 1:
                     # Price change features
-                    df_features.loc[mask, 'price_change'] = stock_data['closing_price'].pct_change()
-                    df_features.loc[mask, 'price_change_abs'] = stock_data['closing_price'].diff()
+                    df_features['price_change'] = df_features['closing_price'].pct_change()
+                    df_features['price_change_abs'] = df_features['closing_price'].diff()
                     
-                    # Moving averages
-                    df_features.loc[mask, 'ma_5'] = stock_data['closing_price'].rolling(5).mean()
-                    df_features.loc[mask, 'ma_10'] = stock_data['closing_price'].rolling(10).mean()
-                    df_features.loc[mask, 'ma_20'] = stock_data['closing_price'].rolling(20).mean()
+                    # Moving averages - only calculate if enough data
+                    if len(df_features) >= 5:
+                        df_features['ma_5'] = df_features['closing_price'].rolling(5).mean()
+                    else:
+                        df_features['ma_5'] = df_features['closing_price']
+                        
+                    if len(df_features) >= 10:
+                        df_features['ma_10'] = df_features['closing_price'].rolling(10).mean()
+                    else:
+                        df_features['ma_10'] = df_features['closing_price']
+                        
+                    if len(df_features) >= 20:
+                        df_features['ma_20'] = df_features['closing_price'].rolling(20).mean()
+                    else:
+                        df_features['ma_20'] = df_features['closing_price']
                     
-                    # Volatility (rolling standard deviation)
-                    df_features.loc[mask, 'volatility_5'] = stock_data['closing_price'].rolling(5).std()
-                    df_features.loc[mask, 'volatility_10'] = stock_data['closing_price'].rolling(10).std()
+                    # Volatility - adapt to available data
+                    if len(df_features) >= 5:
+                        df_features['volatility_5'] = df_features['closing_price'].rolling(5).std()
+                    else:
+                        df_features['volatility_5'] = df_features['closing_price'].std()
+                        
+                    if len(df_features) >= 10:
+                        df_features['volatility_10'] = df_features['closing_price'].rolling(10).std()
+                    else:
+                        df_features['volatility_10'] = df_features['closing_price'].std()
                     
                     # Price position relative to high/low
-                    high_low_diff = stock_data['high'] - stock_data['low']
-                    high_low_diff = high_low_diff.replace(0, np.nan)  # Avoid division by zero
-                    df_features.loc[mask, 'price_position'] = (
-                        (stock_data['closing_price'] - stock_data['low']) / high_low_diff
+                    high_low_diff = df_features['high'] - df_features['low']
+                    high_low_diff = high_low_diff.replace(0, np.nan)
+                    df_features['price_position'] = (
+                        (df_features['closing_price'] - df_features['low']) / high_low_diff
                     )
                     
-                    # Lagged features (previous day values)
-                    df_features.loc[mask, 'prev_close'] = stock_data['closing_price'].shift(1)
-                    df_features.loc[mask, 'prev_volume'] = stock_data['volume'].shift(1)
-                    df_features.loc[mask, 'prev_high'] = stock_data['high'].shift(1)
-                    df_features.loc[mask, 'prev_low'] = stock_data['low'].shift(1)
-        else:
-            # Single stock data
-            df_features = df_features.sort_values('date')
+                    # Lagged features
+                    df_features['prev_close'] = df_features['closing_price'].shift(1)
+                    df_features['prev_volume'] = df_features['volume'].shift(1)
+                    df_features['prev_high'] = df_features['high'].shift(1)
+                    df_features['prev_low'] = df_features['low'].shift(1)
             
-            if len(df_features) > 1:
-                # Price change features
-                df_features['price_change'] = df_features['closing_price'].pct_change()
-                df_features['price_change_abs'] = df_features['closing_price'].diff()
+            # Additional features
+            df_features['high_low_pct'] = (
+                (df_features['high'] - df_features['low']) / df_features['low'] * 100
+            )
+            df_features['open_close_pct'] = (
+                (df_features['closing_price'] - df_features['opening_price']) / 
+                df_features['opening_price'] * 100
+            )
+            
+            # Date-based features
+            if pd.api.types.is_datetime64_any_dtype(df_features['date']):
+                df_features['month'] = df_features['date'].dt.month
+                df_features['day_of_week'] = df_features['date'].dt.dayofweek
+                df_features['quarter'] = df_features['date'].dt.quarter
+            
+            return df_features
+            
+        except Exception as e:
+            logger.error(f"Error creating features: {str(e)}")
+            
+            # Return a simplified version with minimal features if error occurs
+            # This fallback helps ensure we can still attempt prediction with limited features
+            try:
+                df_simple = data.copy()
                 
-                # Moving averages
-                df_features['ma_5'] = df_features['closing_price'].rolling(5).mean()
-                df_features['ma_10'] = df_features['closing_price'].rolling(10).mean()
-                df_features['ma_20'] = df_features['closing_price'].rolling(20).mean()
+                # Ensure essential features are available
+                required_columns = ['ma_5', 'ma_10', 'volatility_5', 'price_change']
                 
-                # Volatility
-                df_features['volatility_5'] = df_features['closing_price'].rolling(5).std()
-                df_features['volatility_10'] = df_features['closing_price'].rolling(10).std()
+                for col in required_columns:
+                    if col not in df_simple.columns:
+                        # Fill with simple values
+                        if col == 'ma_5' or col == 'ma_10':
+                            df_simple[col] = df_simple['closing_price']
+                        elif col == 'volatility_5':
+                            df_simple[col] = df_simple['closing_price'].std()
+                        elif col == 'price_change':
+                            df_simple[col] = 0
                 
-                # Price position relative to high/low
-                high_low_diff = df_features['high'] - df_features['low']
-                high_low_diff = high_low_diff.replace(0, np.nan)
-                df_features['price_position'] = (
-                    (df_features['closing_price'] - df_features['low']) / high_low_diff
-                )
+                return df_simple
+                
+            except Exception as inner_e:
+                logger.error(f"Fallback feature creation also failed: {str(inner_e)}")
+                raise
                 
                 # Lagged features
                 df_features['prev_close'] = df_features['closing_price'].shift(1)
@@ -189,21 +282,51 @@ class PredictionService:
         
         # Select only the required features
         try:
-            X = data[self.feature_names].copy()
-        except KeyError as e:
+            # Check for missing features and create them with sensible defaults
             missing_features = set(self.feature_names) - set(data.columns)
-            raise ValueError(f"Missing features: {missing_features}")
+            if missing_features:
+                logger.warning(f"Creating missing features with defaults: {missing_features}")
+                for feature in missing_features:
+                    if 'ma_' in feature:
+                        # Moving averages default to the closing price
+                        data[feature] = data['closing_price']
+                    elif 'volatility' in feature:
+                        # Volatility defaults to a small percentage of closing price
+                        data[feature] = data['closing_price'] * 0.01
+                    elif feature == 'price_change':
+                        # Price change defaults to 0
+                        data[feature] = 0
+                    elif feature == 'price_position':
+                        # Price position defaults to 0.5 (middle)
+                        data[feature] = 0.5
+                    elif feature == 'prev_close':
+                        # Previous close defaults to closing_price (no change)
+                        data[feature] = data['closing_price']
+                    elif 'pct' in feature:
+                        # Percentage features default to 0
+                        data[feature] = 0
+                    else:
+                        # Default for other features
+                        data[feature] = 0
+            
+            # Now we should have all required features
+            X = data[self.feature_names].copy()
+            
+            # Handle missing values
+            X = X.fillna(method='ffill').fillna(method='bfill').fillna(0)
+            
+            # Scale features
+            X_scaled = self.scaler.transform(X)
+            
+            # Get actual prices for comparison
+            y_actual = data['closing_price'].values
+            
+            return X_scaled, y_actual
         
-        # Handle missing values
-        X = X.fillna(method='ffill').fillna(method='bfill').fillna(0)
-        
-        # Scale features
-        X_scaled = self.scaler.transform(X)
-        
-        # Get actual prices for comparison
-        y_actual = data['closing_price'].values
-        
-        return X_scaled, y_actual
+        except Exception as e:
+            logger.error(f"Error preparing prediction data: {str(e)}")
+            # If we reach here, something serious went wrong
+            raise ValueError(f"Failed to prepare prediction data: {str(e)}")
     
     def predict_ticker(self, ticker: str, days: int = 90, model_name: str = 'linear_regression') -> Dict:
         """

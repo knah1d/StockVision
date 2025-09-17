@@ -27,12 +27,34 @@ class AnalysisService:
         # Prepare chart data
         chart_data = self.data_service.prepare_chart_data(processed_data)
         
-        return {
+        # Create formatted result that matches frontend expectations
+        analysis_result = {
+            'ticker': ticker,
+            'name': stats.get('name', ticker),
+            'sector': stats.get('sector', 'Unknown'),
             'ticker_info': stats,
             'technical_indicators': technical_indicators,
             'risk_metrics': risk_metrics,
-            'chart_data': chart_data
+            'chart_data': chart_data,  # Frontend expects chart_data, not price_data
+            'summary': {
+                'current_price': stats.get('current_price', 0.0),
+                'price_change': stats.get('price_change_pct', 0.0),
+                'date_range': stats.get('date_range', ''),
+                'volume': stats.get('avg_volume', 0.0)
+            },
+            'price_data': chart_data,  # Keep this for API compatibility
+            'statistics': {
+                **stats,
+                'risk_metrics': risk_metrics
+            },
+            'analysis': {
+                'trend': 'Bullish' if stats.get('price_change_pct', 0) > 0 else 'Bearish',
+                'summary': f"Analysis for {ticker} over {days} days",
+                'recommendations': 'Buy' if stats.get('price_change_pct', 0) > 5 else 'Hold' if stats.get('price_change_pct', 0) > 0 else 'Sell'
+            }
         }
+        
+        return analysis_result
     
     def compare_tickers(self, ticker_list: List[str], days: int = 90) -> Optional[Dict[str, Any]]:
         """Compare multiple tickers"""
@@ -41,6 +63,8 @@ class AnalysisService:
         
         comparison_stats = []
         ticker_data_dict = {}
+        names_dict = {}
+        sectors_dict = {}
         
         # Collect data for all tickers
         for ticker in ticker_list:
@@ -48,6 +72,8 @@ class AnalysisService:
             if result is not None:
                 stats, data = result
                 ticker_data_dict[ticker] = data
+                names_dict[ticker] = stats.get('name', ticker)
+                sectors_dict[ticker] = stats.get('sector', 'Unknown')
                 
                 # Format for comparison summary
                 comparison_stats.append({
@@ -78,11 +104,54 @@ class AnalysisService:
         # Prepare comparison chart data
         chart_data = self._prepare_comparison_chart_data(ticker_data_dict)
         
+        # Calculate correlation matrix
+        correlation_matrix = self._calculate_correlation_matrix(ticker_data_dict)
+        
+        # Calculate risk metrics for each ticker
+        risk_metrics = {}
+        for ticker, data in ticker_data_dict.items():
+            risk_metrics[ticker] = self.data_service.calculate_risk_metrics(data)
+        
+        # Format the result to match TickerComparisonResponse schema
         return {
-            'comparison_summary': comparison_stats,
-            'performance_ranking': performance_ranking,
-            'chart_data': chart_data
+            'tickers': ticker_list,
+            'names': names_dict,
+            'sectors': sectors_dict,
+            'price_data': chart_data,
+            'performance_metrics': {
+                'ranking': performance_ranking,
+                'summary': comparison_stats
+            },
+            'correlation_matrix': correlation_matrix,
+            'risk_metrics': risk_metrics,
+            'analysis': {
+                'best_performer': ranked_stats[0]['ticker'] if ranked_stats else None,
+                'worst_performer': ranked_stats[-1]['ticker'] if ranked_stats else None,
+                'summary': f"Comparison of {len(ticker_list)} stocks over {days} days",
+                'recommendations': "Consider investing in the top-performing stocks while maintaining diversification."
+            }
         }
+        
+    def _calculate_correlation_matrix(self, ticker_data_dict: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
+        """Calculate correlation matrix for ticker comparison"""
+        # Extract closing prices for each ticker
+        prices_dict = {}
+        for ticker, data in ticker_data_dict.items():
+            prices_dict[ticker] = data['closing_price'].values
+        
+        # Create a DataFrame for correlation calculation
+        df = pd.DataFrame(prices_dict)
+        
+        # Calculate correlation matrix
+        corr_matrix = df.corr().round(3)
+        
+        # Convert to dictionary format for JSON serialization
+        corr_data = {
+            'tickers': list(corr_matrix.columns),
+            'matrix': corr_matrix.values.tolist()
+        }
+        
+        return corr_data
     
     def analyze_sector(self, sector_name: str, days: int = 90, top_n: int = 10) -> Optional[Dict[str, Any]]:
         """Analyze sector performance"""
@@ -140,16 +209,26 @@ class AnalysisService:
         volatile_stocks = self.data_service.find_volatile_stocks(sector, days, top_n)
         
         # Prepare chart data for volatility analysis
-        chart_data = {
+        volatility_metrics = {
             'tickers': [stock['ticker'] for stock in volatile_stocks],
             'volatilities': [stock['volatility'] for stock in volatile_stocks],
             'price_changes': [stock['price_change_pct'] for stock in volatile_stocks],
-            'sectors': [stock['sector'] for stock in volatile_stocks]
+            'sectors': [stock['sector'] for stock in volatile_stocks],
+            'average_volatility': float(np.mean([stock['volatility'] for stock in volatile_stocks])) if volatile_stocks else 0.0
+        }
+        
+        # Create analysis text
+        analysis = {
+            'summary': f"Analysis of the {top_n} most volatile stocks over {days} days" + (f" in the {sector} sector" if sector else ""),
+            'insights': "Higher volatility stocks may present trading opportunities but come with increased risk."
         }
         
         return {
+            'period_days': days,
+            'sector': sector,
             'volatile_stocks': volatile_stocks,
-            'chart_data': chart_data
+            'volatility_metrics': volatility_metrics,
+            'analysis': analysis
         }
     
     def _prepare_comparison_chart_data(self, ticker_data_dict: Dict[str, pd.DataFrame]) -> Dict[str, Any]:
@@ -203,8 +282,8 @@ class AnalysisService:
     def get_sector_overview(self, days: int = 90) -> Dict[str, Any]:
         """Get overview of all sectors performance"""
         try:
-            # Get available sectors
-            sectors = self.data_service.df['sector'].dropna().unique()
+            # Get available sectors as a list
+            sectors = sorted(self.data_service.df['sector'].dropna().unique().tolist())
             
             sector_performance = []
             sector_stats = []
@@ -286,7 +365,8 @@ class AnalysisService:
             return {
                 'sector_performance': sector_performance,
                 'sector_stats': sector_stats,
-                'top_performers': top_performers
+                'top_performers': top_performers,
+                'sectors_list': sectors  # Add the sectors list for consistent API
             }
             
         except Exception as e:
@@ -294,5 +374,6 @@ class AnalysisService:
             return {
                 'sector_performance': [],
                 'sector_stats': [],
-                'top_performers': []
+                'top_performers': [],
+                'sectors_list': []
             }

@@ -46,12 +46,20 @@ class DataService:
         if limit:
             tickers_list = tickers_list[:limit]
         
-        sectors = sorted(self.df['sector'].dropna().unique())
+        # Create a dictionary of sector counts
+        sector_counts = {}
+        # Also create a list of sectors for the frontend
+        sectors_list = sorted(self.df['sector'].dropna().unique().tolist())
+        
+        for sec in sectors_list:
+            count = len(self.df[self.df['sector'] == sec]['trading_code'].unique())
+            sector_counts[sec] = count
         
         return {
             'tickers': tickers_list,
             'total_count': len(filtered_tickers),
-            'sectors': sectors
+            'sectors': sectors_list,
+            'sector_counts': sector_counts  # Keep the counts in a separate field
         }
     
     def get_ticker_data(self, ticker_symbol: str, days: Optional[int] = None) -> Optional[Tuple[Dict, pd.DataFrame]]:
